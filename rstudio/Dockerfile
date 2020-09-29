@@ -137,18 +137,20 @@ RUN R -e "devtools::install_github('pachterlab/sleuth')"
 RUN R -e "install.packages('cowplot')"
 RUN R -e "install.packages('knitr')"
 RUN R -e "install.packages('rmarkdown')"
+RUN R -e "install.packages('gridExtra')"
+RUN R -e "install.packages('onlinePCA')"
+RUN R -e "install.packages('RcppArmadillo')"
+
+ENV PASSWORD "rstudio1"
+RUN bash /etc/cont-init.d/userconf
+
+COPY run.sh /usr/local/bin/run.sh
+RUN chmod +x /usr/local/bin/run.sh
 
 
-#ENV PASSWORD "rstudio1"
-#RUN bash /etc/cont-init.d/userconf
-
-#COPY run.sh /usr/local/bin/run.sh
-#RUN chmod +x /usr/local/bin/run.sh
-
-
-#EXPOSE 8787
+EXPOSE 8787
 
 ## automatically link a shared volume for kitematic users
-#VOLUME /home/rstudio/kitematic
+VOLUME /home/rstudio/kitematic
 
-#CMD ["/init"]
+CMD ["/init"]
