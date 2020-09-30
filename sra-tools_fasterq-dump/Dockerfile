@@ -54,7 +54,10 @@ RUN opt/conda/bin/conda install -c conda-forge -c bioconda sra-tools==2.10.8
 RUN ln -s /opt/conda/pkgs/*/bin/* /bin; exit 0
 RUN ln -s /opt/conda/pkgs/*/lib/* /usr/lib; exit 0
 
+COPY run.sh /usr/local/bin/run.sh
+RUN chmod +x /usr/local/bin/run.sh
+
 #make a location for SRA files to output
 RUN mkdir /sra_files
 WORKDIR /sra_files
-ENTRYPOINT ["fasterq-dump"]
+ENTRYPOINT ["/usr/local/bin/run.sh"]
