@@ -140,6 +140,12 @@ RUN R -e "install.packages('rmarkdown')"
 RUN R -e "install.packages('gridExtra')"
 RUN R -e "install.packages('onlinePCA')"
 RUN R -e "install.packages('RcppArmadillo')"
+RUN R -e "install.packages('tinytex')"
+RUN R -e "devtools::install_version('shiny', version='1.3.2', repos='http://cran.us.r-project.org')"
+RUN R -e "devtools::install_version('htmltools', version = '0.3.6', repos = 'http://cran.us.r-project.org')"
+
+# provide read and write access to Rstudio users for default R library location
+RUN chmod -R 777 /usr/local/lib/R/site-library
 
 ENV PASSWORD "rstudio1"
 RUN bash /etc/cont-init.d/userconf
@@ -147,10 +153,27 @@ RUN bash /etc/cont-init.d/userconf
 COPY run.sh /usr/local/bin/run.sh
 RUN chmod +x /usr/local/bin/run.sh
 
+COPY nginx.conf.tmpl /nginx.conf.tmpl
+COPY rserver.conf /etc/rstudio/rserver.conf
+COPY supervisor-nginx.conf /etc/supervisor/conf.d/nginx.conf
+COPY supervisor-rstudio.conf /etc/supervisor/conf.d/rstudio.conf
+
+ENV REDIRECT_URL "http://localhost/"
+
+ARG LOCAL_USER=rstudio
+ARG PRIV_CMDS='/bin/ch*,/bin/cat,/bin/gunzip,/bin/tar,/bin/mkdir,/bin/ps,/bin/mv,/bin/cp,/usr/bin/apt*,/usr/bin/pip*,/bin/yum'
+
+RUN if [ -x /usr/bin/apt ]; then \
+      apt-get update && apt-get -y install sudo && rm -rf /var/lib/apt/lists/*; \
+    elif [ -x /bin/yum ]; then \
+      yum -y update && yum -y install sudo && yum clean all; \
+    fi
+
+RUN echo "$LOCAL_USER	ALL=NOPASSWD: $PRIV_CMDS" >> /etc/sudoers
+
+ADD https://github.com/hairyhenderson/gomplate/releases/download/v2.5.0/gomplate_linux-amd64 /usr/bin/gomplate
+RUN chmod a+x /usr/bin/gomplate
+RUN chown -R rstudio:rstudio /home/rstudio/
 
 EXPOSE 8787
-
-## automatically link a shared volume for kitematic users
-VOLUME /home/rstudio/kitematic
-
-CMD ["/usr/local/bin/run.sh"]
+ENTRYPOINT ["/usr/local/bin/run.sh"]
